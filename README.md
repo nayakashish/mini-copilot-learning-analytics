@@ -60,3 +60,30 @@ instead.
 
 The file lists end up in `data/splits/train.txt` and `data/splits/test.txt`,
 and the numbers per project in `data/stats.csv`.
+
+## Models
+
+```sh
+python3 scripts/train.py
+```
+
+This trains the word and letter n-gram models on the train split and pickles
+them into `models/` (gitignored, takes about 30 seconds). Each pickle has the
+counts for every n from 1 to 10, so that's all 20 models at once.
+
+- **Word tokens** come from Python's `tokenize`. Comments are dropped, strings
+  and numbers become `<STR>` and `<NUM>`, and newlines/indents are kept as
+  `<NEWLINE>`, `<INDENT>`, `<DEDENT>`.
+- **The letter model** reads the same tokens written out as text with a space
+  between each one, and it predicts the next word by spelling it out letter
+  by letter until it writes a space (with a small beam search so it can give
+  more than one suggestion).
+- **Smoothing** is backoff + add-k. If a context was never seen in training,
+  the model drops the oldest token and tries again, down to no context at all.
+  At the level it lands on, every count gets k = 0.1 added so nothing ever has
+  probability 0. Words seen only once in training become `<UNK>`.
+
+Every model has the same `predict(code, k)` method that gives k suggestions,
+so the evaluation and the editor can swap them around.
+
+Tests: `python3 -m pytest`
