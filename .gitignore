@@ -3,9 +3,12 @@ __pycache__/
 venv/
 .pytest_cache/
 
+# fetched source projects (regenerate with scripts/fetch_data.py)
+data/raw/
 
 .DS_Store
 .vscode/
 .idea/
 
 temp/
+CLAUDE.md
