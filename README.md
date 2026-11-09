@@ -9,6 +9,14 @@ and edit distance, and the best one is demoed in a small text editor.
 - Python 3.10
 - git 2.27 or newer (for sparse checkout)
 
+Setup:
+
+```sh
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
 Run every command from the repo root.
 
 ## Dataset
