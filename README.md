@@ -48,9 +48,9 @@ python3 scripts/make_splits.py
 
 I only keep code that looks like what someone would actually be writing:
 tests, docs, examples, `setup.py`, empty files, duplicates and files that
-don't parse on Python 3.10 all get dropped. Then I cap every project at 80k
-tokens (random files, fixed seed) so one big project like glances can't take
-over the dataset.
+don't parse on Python 3.10 all get dropped (because I use v3.10 on my machine currently). Then I cap every project at 80k
+tokens (random files, fixed seed) so one big project like glances doesn't take
+over the dataset and is more balanced with the other smaller projects.
 
 The split is by project: whole projects go to test until test is about 30%
 of the tokens, so the model gets tested on code it has never seen. With seed

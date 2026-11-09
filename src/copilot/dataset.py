@@ -1,7 +1,7 @@
 """Cleaning the fetched projects and splitting them into train/test.
 
 The idea is to keep code that looks like what someone would actually be
-writing, so tests, docs, examples etc. get dropped.
+writing, so tests, docs, examples etc and such get dropped.
 """
 
 import ast
