@@ -12,8 +12,8 @@ and edit distance, and the best one is demoed in a small text editor.
 Setup:
 
 ```sh
-python3 -m venv .venv
-source .venv/bin/activate
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -39,3 +39,24 @@ It grabs each project at its pinned commit (no history) and only checks out
 the `.py` files. If a project is already downloaded it gets skipped, so it's
 fine to run again.
 
+
+### Cleaning and the split
+
+```sh
+python3 scripts/make_splits.py
+```
+
+I only keep code that looks like what someone would actually be writing:
+tests, docs, examples, `setup.py`, empty files, duplicates and files that
+don't parse on Python 3.10 all get dropped. Then I cap every project at 80k
+tokens (random files, fixed seed) so one big project like glances can't take
+over the dataset.
+
+The split is by project: whole projects go to test until test is about 30%
+of the tokens, so the model gets tested on code it has never seen. With seed
+329 that's 8 projects in train and 4 in test (flask, python-patterns, sherlock,
+thealgorithms), 70.2% / 29.8% of the tokens. `--unit file` splits by file
+instead.
+
+The file lists end up in `data/splits/train.txt` and `data/splits/test.txt`,
+and the numbers per project in `data/stats.csv`.

@@ -1,0 +1,13 @@
+project,files_kept,tokens_kept,files_used,tokens_used,share,split,dropped
+cpython-stdlib,22,96351,18,78799,17.8%,train,
+flask,24,32708,24,32708,7.4%,test,test/docs/example: 59
+free-python-games,29,12016,29,12016,2.7%,train,test/docs/example: 33
+glances,163,169072,83,79990,18.0%,train,empty: 9; test/docs/example: 80
+hledger-wrapper,21,17708,21,17708,4.0%,train,empty: 2; test/docs/example: 12
+pelican,21,45502,21,45502,10.3%,train,empty: 1; test/docs/example: 32
+python-patterns,40,13064,40,13064,2.9%,test,empty: 7; test/docs/example: 28
+python-sortedcontainers,4,12501,4,12501,2.8%,train,test/docs/example: 22
+requests,19,27635,19,27635,6.2%,train,test/docs/example: 18
+sherlock,8,6387,8,6387,1.4%,test,test/docs/example: 9
+thealgorithms,207,84484,195,79985,18.0%,test,doesn't parse: 53; empty: 5; test/docs/example: 6
+thefuck,208,37142,208,37142,8.4%,train,empty: 4; test/docs/example: 204
