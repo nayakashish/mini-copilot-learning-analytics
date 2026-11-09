@@ -6,6 +6,9 @@ venv/
 # fetched source projects (regenerate with scripts/fetch_data.py)
 data/raw/
 
+# trained models, pickled (regenerate with scripts/train.py)
+models/
+
 .DS_Store
 .vscode/
 .idea/
