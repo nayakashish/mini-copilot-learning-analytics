@@ -87,3 +87,14 @@ Every model has the same `predict(code, k)` method that gives k suggestions,
 so the evaluation and the editor can swap them around.
 
 Tests: `python3 -m pytest`
+
+## Evaluation
+
+```sh
+python3 scripts/evaluate.py
+```
+
+For each of the 4 test projects I pick 1,000 random spots (seed 329). At each spot the model sees the code before it and
+guesses the next word. The main score only uses spots where the next word is a real word, and newline/indent tokens are taken out of the guesses since the editor won't suggest them. A second score includes them, just out of interest.
+
+Results go to `results/metrics/ngram.csv` and, split up per test project, `results/metrics/ngram_by_project.csv`. Takes about 5 minutes.
