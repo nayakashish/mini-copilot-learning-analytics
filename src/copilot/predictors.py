@@ -88,9 +88,12 @@ def load(path: Path) -> NGramModel:
 
 
 def get_predictor(kind: str, n: int, models_dir: Path = MODELS):
-    """E.g. get_predictor("word", 3). Needs scripts/train.py to have been run."""
+    """E.g. get_predictor("word", 3). For "ast", n is the word model it reorders. Needs scripts/train.py to have been run."""
     if kind == "word":
         return WordPredictor(load(models_dir / "word.pkl"), n)
     if kind == "letter":
         return LetterPredictor(load(models_dir / "letter.pkl"), n)
-    raise ValueError(f"kind has to be 'word' or 'letter', got {kind!r}")
+    if kind == "ast":
+        from copilot.ast_model import AstPredictor  # here because ast_model imports this file
+        return AstPredictor(WordPredictor(load(models_dir / "word.pkl"), n))
+    raise ValueError(f"kind has to be 'word', 'letter' or 'ast', got {kind!r}")
