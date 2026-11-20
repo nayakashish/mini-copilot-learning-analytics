@@ -86,6 +86,21 @@ counts for every n from 1 to 10, so that's all 20 models at once.
 Every model has the same `predict(code, k)` method that gives k suggestions,
 so the evaluation and the editor can swap them around.
 
+### The AST model
+
+This one isn't a new model, it sits on top of word-4. Word-4 gives its 20 best
+guesses, and I check each one: if I add this word, can Python still read the
+code? The ones that still parse go first. The rest go after. The order inside
+each group stays like word-4 had it.
+
+The important catch is that code at a cut point is almost never valid (open bracket,
+half a string, an `if x:` with nothing under it), and `ast.parse` just errors
+on all of that. So `src/copilot/repair.py` fixes the ending first. I use
+parso's tokenizer to see what's still open (parso doesn't give up on broken
+code), close it, and add a `pass` or a dummy value where something is missing.
+Then `ast.parse` can give me a yes or no. If the code can't be fixed at all,
+the AST model just uses word-4's order.
+
 Tests: `python3 -m pytest`
 
 ## Evaluation
@@ -99,11 +114,54 @@ guesses the next word. The main score only uses spots where the next word is a r
 
 Results go to `results/metrics/ngram.csv` and, split up per test project, `results/metrics/ngram_by_project.csv`. Takes about 5 minutes.
 
+The AST model gets the same spots, run next to word-4 since that's what it
+reorders:
+
+```sh
+python3 scripts/evaluate.py --model ast
+python3 scripts/ast_examples.py
+```
+
+Results go to `results/metrics/ast.csv` and `ast_by_project.csv`. This one is
+slow (about 20 minutes) because every guess gets repaired and parsed.
+`ast_examples.py` counts the spots where the AST model changes the top guess
+(better, worse or neither) and prints a few real ones.
+
 ## Charts
 
 ```sh
 python3 scripts/plot.py
 ```
 
-Makes the charts in `results/figures/` from the results: accuracy vs n,
-edit distance vs n, and accuracy vs n for each test project.
+Makes the charts in `results/figures/`: accuracy vs n, edit distance vs n, and
+accuracy vs n for each test project. If `results/metrics/ast.csv` exists, the
+AST model shows up as a star at n = 4.
+
+## Comparing the models
+
+```sh
+python3 scripts/compare.py
+```
+
+Puts the AST model, word-4, the best word n and the best letter n side by side
+in `results/metrics/comparison.csv` (and prints it). It needs both evaluations
+run first.
+
+## What the files do
+
+`src/copilot/` (each one has a test file in `tests/`):
+- `dataset.py`: cleaning and the split by project
+- `tokenizers.py`: code to word tokens (and to letters)
+- `ngram.py`: the n-gram model with backoff and add-k
+- `predictors.py`: word and letter predictors, save/load, `get_predictor`
+- `repair.py`: closes open brackets and strings in cut-off code
+- `ast_model.py`: the AST model (word-4 guesses reordered by whether the code parses)
+- `metrics.py`: accuracy and edit distance
+- `evaluate.py`: picks the cut points and scores a model on them
+- `compare.py`: builds the comparison table from the csvs
+
+`scripts/` (short, just run them from the repo root):
+- `fetch_data.py`, `make_splits.py`, `train.py`, `evaluate.py`: the pipeline, in that order
+- `ast_examples.py`: where the AST model helps or hurts vs word-4
+- `plot.py`: the charts
+- `compare.py`: the comparison table
