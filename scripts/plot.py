@@ -5,6 +5,9 @@ Writes to results/figures/:
     edit_distance_vs_n.png     edit distance vs n (raw and normalized)
     accuracy_by_project.png    top-1 accuracy vs n for each test project
 
+If results/metrics/ast.csv exists (scripts/evaluate.py --model ast), the AST
+model is drawn as a single star at the n of the word model it reorders.
+
 Run from the repo root after scripts/evaluate.py:
     python3 scripts/plot.py
 """
@@ -69,7 +72,19 @@ def line(ax, ys, color, marker, dashed=False, label=None):
             markeredgecolor="white", markeredgewidth=1)
 
 
-def accuracy_vs_n(rows) -> plt.Figure:
+def ast_point(ax, ast_rows, col, dy=0, label=None):
+    """The AST model is one number (it sits on word-4), so one star at that n."""
+    row = next((r for r in ast_rows if r["model"] == "ast"), None)
+    if row is None:
+        return
+    n, y = int(row["n"]), float(row[col])
+    ax.plot([n], [y], marker="*", markersize=14, color=AQUA, markeredgecolor="white",
+            markeredgewidth=1, linestyle="none", label=label, zorder=5)
+    ax.annotate("ast", (n, y), xytext=(0, dy), textcoords="offset points",
+                ha="center", fontsize=9, color=INK)
+
+
+def accuracy_vs_n(rows, ast_rows=()) -> plt.Figure:
     fig, ax = plt.subplots(figsize=(7.5, 4.5))
     for model, (color, marker) in MODEL_STYLE.items():
         top1 = series(rows, model, "accuracy")
@@ -78,6 +93,8 @@ def accuracy_vs_n(rows) -> plt.Figure:
         line(ax, top1, color, marker, label=f"{model} model, top-1")
         end_label(ax, top1, f"{model} top-1", dy=-6 if model == "letter" else 6)
         end_label(ax, top5, f"{model} top-5", dy=-6 if model == "letter" else 6)
+    ast_point(ax, ast_rows, "accuracy", dy=-16, label="AST model (on word-4), top-1")
+    ast_point(ax, ast_rows, "top5_accuracy", dy=10, label="AST model (on word-4), top-5")
     style(ax, "Accuracy vs n (real words only, 4,000 test spots)", "accuracy", percent=True)
     ax.set_ylim(0, 0.7)
     ax.set_xlim(0.6, 12.2)
@@ -86,7 +103,7 @@ def accuracy_vs_n(rows) -> plt.Figure:
     return fig
 
 
-def edit_distance_vs_n(rows) -> plt.Figure:
+def edit_distance_vs_n(rows, ast_rows=()) -> plt.Figure:
     fig, axes = plt.subplots(1, 2, figsize=(10, 4.2))
     panels = [("edit_distance", "Edit distance (letters off)", "letters"),
               ("normalized_edit_distance", "Normalized edit distance", "edits / length of the right word")]
@@ -95,6 +112,7 @@ def edit_distance_vs_n(rows) -> plt.Figure:
             ys = series(rows, model, col)
             line(ax, ys, color, marker, label=f"{model} model")
             end_label(ax, ys, model)
+        ast_point(ax, ast_rows, col, dy=-14)
         style(ax, f"{title}, lower is better", ylabel)
         ax.set_xlim(0.6, 11.6)
         ax.set_ylim(bottom=0)
@@ -123,9 +141,10 @@ def main() -> int:
     FIGURES.mkdir(parents=True, exist_ok=True)
     rows = read("ngram.csv")
     by_project = read("ngram_by_project.csv")
+    ast_rows = read("ast.csv") if (METRICS / "ast.csv").exists() else []
     figures = {
-        "accuracy_vs_n.png": accuracy_vs_n(rows),
-        "edit_distance_vs_n.png": edit_distance_vs_n(rows),
+        "accuracy_vs_n.png": accuracy_vs_n(rows, ast_rows),
+        "edit_distance_vs_n.png": edit_distance_vs_n(rows, ast_rows),
         "accuracy_by_project.png": accuracy_by_project(by_project),
     }
     for name, fig in figures.items():
