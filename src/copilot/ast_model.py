@@ -9,7 +9,7 @@ the syntax check alone.
 """
 
 from copilot.predictors import WordPredictor
-from copilot.repair import repair
+from copilot.repair import parses, repair
 from copilot.tokenizers import DEDENT, INDENT, NEWLINE, NUM, STR, word_tokens
 
 STAND_IN = {STR: '"s"', NUM: "0"}  # real text for the placeholder tokens
@@ -39,22 +39,44 @@ def tokens_to_code(tokens: list[str]) -> str:
     return "".join(out)
 
 
+CONTINUES = ("else", "elif", "except", "finally")  # these belong to the statement above
+
+
+def tail_start(code: str) -> int:
+    """Where the last top-level statement starts, so only that part needs parsing.
+
+    Everything before it is the same for every guess, and parsing the whole file
+    for every guess is slow. I only cut at a line that starts at column 0 and
+    only if the code before it parses on its own. Otherwise 0 (parse everything).
+    """
+    lines = code.split("\n")
+    for i in range(len(lines) - 1, 0, -1):
+        line = lines[i]
+        if line and line[0] not in " \t#)]}\"'" and not line.startswith(CONTINUES):
+            head = "\n".join(lines[:i]) + "\n"
+            return len(head) if parses(head) else 0
+    return 0
+
+
 class AstPredictor:
     def __init__(self, base: WordPredictor, k_candidates: int = 20):
         self.base, self.k_candidates = base, k_candidates
         self.name = f"ast-{base.n}"
 
-    def keeps_valid(self, tokens: list[str], candidate: str) -> bool:
-        return repair(tokens_to_code(tokens + [candidate])) is not None
-
     def predict_tokens(self, tokens: list[str], k: int = 5) -> list[str]:
         candidates = self.base.predict_tokens(tokens, max(k, self.k_candidates))
+        context = tokens_to_code(tokens)
+        start = tail_start(context)
+        if start and repair(context[start:]) is None:
+            start = 0  # the shortcut didn't work out here, parse everything
         # if the code so far can't be repaired, every guess would look bad
         # for the same reason, so there is nothing to rerank with
-        if repair(tokens_to_code(tokens)) is None:
+        if repair(context[start:]) is None:
             return candidates[:k]
-        good = [c for c in candidates if self.keeps_valid(tokens, c)]
-        bad = [c for c in candidates if c not in good]
+        good, bad = [], []
+        for c in candidates:
+            code = tokens_to_code(tokens + [c])[start:]
+            (good if repair(code) is not None else bad).append(c)
         return (good + bad)[:k]
 
     def predict(self, code: str, k: int = 5) -> list[str]:

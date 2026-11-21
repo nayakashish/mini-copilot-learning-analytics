@@ -1,4 +1,4 @@
-from copilot.ast_model import AstPredictor, tokens_to_code
+from copilot.ast_model import AstPredictor, tail_start, tokens_to_code
 from copilot.predictors import get_predictor, save
 from copilot.tokenizers import word_tokens
 from test_predictors import word_model
@@ -61,3 +61,25 @@ def test_get_predictor_ast(tmp_path):
     save(word_model(), tmp_path / "word.pkl")
     p = get_predictor("ast", 3, models_dir=tmp_path)
     assert p.name == "ast-3"
+
+
+def test_tail_start_only_cuts_where_the_code_before_parses():
+    code = "import os\n\ndef f(x):\n    return x\n\ny = foo(a"
+    assert code[tail_start(code):] == "y = foo(a"
+    assert tail_start("x = foo(\n1,\n2") == 0  # the code before it doesn't parse
+    assert tail_start("if a:\n    b\nelse:\n    c") == 0  # else goes with the if
+
+
+def test_shortcut_gives_the_same_answer_as_parsing_everything():
+    full = AstPredictor(FakeBase(["def", ",", "+", ")", "for"]))
+    full_start = lambda code: 0
+    import copilot.ast_model as m
+    for code in ("import os\n\nx = foo(a", "def f(x):\n    return x\n\nfor i", "a = 1\nb = (2,"):
+        fast = full.predict(code, k=5)
+        original = m.tail_start
+        m.tail_start = full_start
+        try:
+            slow = full.predict(code, k=5)
+        finally:
+            m.tail_start = original
+        assert fast == slow

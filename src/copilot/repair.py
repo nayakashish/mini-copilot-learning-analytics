@@ -38,6 +38,12 @@ def open_things(code: str) -> tuple[str, list[str]]:
     return string, stack
 
 
+# small endings for a statement that is cut off halfway. Tried in this order
+# (plainest first), so e.g. `for i` gets ` in 0` and `def` gets ` x()`
+FILLS = ("", " 0", " x", " x()", "()", " in 0", " x in 0", " import x", " x import x",
+         " x: 0", ": 0", " x\ndef f()", " def x()")
+
+
 def parses(code: str) -> bool:
     try:
         ast.parse(code)
@@ -59,7 +65,7 @@ def repair(code: str) -> str | None:
     # a try with no except yet
     tried = body + "\n" + base + "except Exception:" + body
     # tried in order, so the plainest ending wins
-    for fill in ("", " 0", " x"):  # a dangling operator like `x =`, or `import`
+    for fill in FILLS:
         for head in ("", ":"):
             for tail in ("", body, tried):
                 attempt = code + string + fill + closers + head + tail

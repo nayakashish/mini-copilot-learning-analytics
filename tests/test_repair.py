@@ -47,3 +47,8 @@ def test_open_things():
     assert open_things("f(a, [b") == ("", ["(", "["])
     assert open_things("f(a)") == ("", [])
     assert open_things("s = 'hel") == ("'", [])
+
+
+def test_keywords_that_need_more_after_them():
+    for code in ("def", "for i", "from a", "lambda x", "async", "x = 1\nfor"):
+        assert parses_so_far(code), code
