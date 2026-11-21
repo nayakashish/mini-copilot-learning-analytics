@@ -123,7 +123,7 @@ python3 scripts/ast_examples.py
 ```
 
 Results go to `results/metrics/ast.csv` and `ast_by_project.csv`. This one is
-slow (about 20 minutes) because every guess gets repaired and parsed.
+slow (about 30 minutes) because every guess gets repaired and parsed.
 `ast_examples.py` counts the spots where the AST model changes the top guess
 (better, worse or neither) and prints a few real ones.
 
